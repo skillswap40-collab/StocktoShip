@@ -103,6 +103,40 @@ def make_user(db):
     return _make
 
 
+def customer_payload(**overrides) -> dict:
+    """A valid POST /customers body. Use example.com: email-validator rejects .test domains."""
+    body = {
+        "business_name": "Corner Market",
+        "owner_name": "Dana Owner",
+        "tax_id": "12-3456789",
+        "address_line1": "1 Main St",
+        "city": "Boston",
+        "state": "MA",
+        "postal_code": "02108",
+        "phone": "617-555-0100",
+        "email": "owner@example.com",
+    }
+    body.update(overrides)
+    return body
+
+
+@pytest.fixture
+def make_customer(db):
+    """Register a customer through the service, each with a unique tax ID."""
+    from app.modules.customers import service
+    from app.modules.customers.schemas import CustomerCreate
+
+    counter = {"n": 0}
+
+    def _make(**overrides):
+        counter["n"] += 1
+        overrides.setdefault("tax_id", f"98{counter['n']:07d}")
+        overrides.setdefault("business_name", f"Test Store {counter['n']}")
+        return service.register(db, CustomerCreate(**customer_payload(**overrides)), actor_id=None)
+
+    return _make
+
+
 @pytest.fixture
 def auth_headers(client):
     """Log in through the API and return an Authorization header."""

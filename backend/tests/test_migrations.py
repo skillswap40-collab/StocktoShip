@@ -3,7 +3,7 @@
 from alembic import command
 from alembic.autogenerate import compare_metadata
 from alembic.migration import MigrationContext
-from sqlalchemy import inspect
+from sqlalchemy import inspect, text
 
 from app.db.models import Base
 from tests.conftest import alembic_config
@@ -22,7 +22,15 @@ def test_downgrade_to_base_and_upgrade_again(migrated_db):
     command.downgrade(cfg, "base")
     tables = set(inspect(migrated_db).get_table_names()) - {"alembic_version"}
     assert tables == set(), f"Tables left after downgrade: {tables}"
+    with migrated_db.connect() as conn:
+        sequences = conn.scalars(
+            text(
+                "SELECT relname FROM pg_class "
+                "WHERE relkind = 'S' AND relnamespace = 'public'::regnamespace"
+            )
+        ).all()
+    assert sequences == [], f"Sequences left after downgrade: {sequences}"
 
     command.upgrade(cfg, "head")
     tables = set(inspect(migrated_db).get_table_names())
-    assert {"audit_log", "user_account"} <= tables
+    assert {"audit_log", "customer", "user_account"} <= tables
