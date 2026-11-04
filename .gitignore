@@ -1,0 +1,21 @@
+# Secrets: real environment files never go in git. Templates (.env.example) do.
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Node / frontend
+node_modules/
+dist/
+*.tsbuildinfo
+
+# OS / editors
+.DS_Store
+.idea/
+.vscode/
